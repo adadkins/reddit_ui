@@ -1,0 +1,4 @@
+services:
+  reddit_reply_bot:
+    build: .
+    restart: unless-stopped
