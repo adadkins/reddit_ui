@@ -11,10 +11,10 @@ load_dotenv()
 subreddits=os.environ["subreddits"]
 
 conn = psycopg2.connect(
-        host="localhost",
-        database="postgres",
-        user="postgres",
-        password="postgres")
+        host=os.environ["PG_HOST"],
+        database=os.environ["PG_DB_NAME"],
+        user=os.environ["PG_USER"],
+        password=os.environ["PG_PASSWORD"])
 
 def main() -> None:
     print(conn.poll())
@@ -49,15 +49,18 @@ def listen(reddit: praw.Reddit) -> None:
 
 def insert_link(submission: praw.reddit.models.Comment) -> None:
     cur = conn.cursor()
-    postgres_insert_query = """ INSERT INTO submission (ID, BODY, AUTHOR, UPDATED_AT) VALUES (%s,%s,%s,%s)"""
+    postgres_insert_query = """ INSERT INTO public.submission (ID, BODY, AUTHOR, UPDATED_AT) VALUES (%s,%s,%s,%s)"""
     now = int(time.time())
     if submission.author == None:
         author_name= "Deleted"
     else: 
         author_name=submission.author.name
+    if len(submission.selftext)>5000:
+        submission.selftext= submission.selftext[:5000]
     record_to_insert = (submission.name, submission.selftext, author_name, now)
-    cur.execute(postgres_insert_query, record_to_insert)
     try:
+        cur = conn.cursor()
+        cur.execute(postgres_insert_query, record_to_insert)
         conn.commit()
     except errors.InFailedSqlTransaction as err:
         print_psycopg2_exception(err)
@@ -66,16 +69,18 @@ def insert_link(submission: praw.reddit.models.Comment) -> None:
         return 
 
 def insert_comment(comment: praw.reddit.models.Comment, reddit: praw.Reddit) -> None:
-        cur = conn.cursor()
-        postgres_insert_query = """ INSERT INTO comments (ID, PARENT_ID, POST_ID, BODY, AUTHOR, UPDATED_AT) VALUES (%s,%s,%s,%s,%s,%s)"""
+        postgres_insert_query = """ INSERT INTO public.comments (ID, PARENT_ID, BODY, AUTHOR, UPDATED_AT) VALUES (%s,%s,%s,%s,%s)"""
         now = int(time.time())
         if comment.author == None:
             author_name= "Deleted"
         else: 
             author_name=comment.author.name
-        record_to_insert = (comment.name, comment.parent_id,comment.link_id, comment.body, author_name, now)
-        cur.execute(postgres_insert_query, record_to_insert)
+        if len(comment.body)>5000:
+            comment.body= comment.body[:5000]
+        record_to_insert = (comment.name, comment.parent_id, comment.body, author_name, now)
         try:
+            cur = conn.cursor()
+            cur.execute(postgres_insert_query, record_to_insert)
             conn.commit()
         except errors.InFailedSqlTransaction as err:
             print_psycopg2_exception(err)
@@ -102,12 +107,11 @@ def print_psycopg2_exception(err:Exception):
 
 def update_parents(id: str, updated_at: int, reddit: praw.Reddit) -> None:
         while True:
-            postgres_update_query = """ UPDATE comments SET UPDATED_AT = %s where ID = %s RETURNING PARENT_ID"""
+            postgres_update_query = """ UPDATE public.comments SET UPDATED_AT = %s where ID = %s RETURNING PARENT_ID"""
             record_to_insert = (updated_at, id)
-
-            cur = conn.cursor()
-            cur.execute(postgres_update_query, record_to_insert)
             try:
+                cur = conn.cursor()
+                cur.execute(postgres_update_query, record_to_insert)
                 conn.commit()
             except errors.InFailedSqlTransaction as err:
                 print_psycopg2_exception(err)
@@ -132,11 +136,11 @@ def update_parents(id: str, updated_at: int, reddit: praw.Reddit) -> None:
 
             #need to handle submissions(prefixed with t3_) differently.
             if 't3_' in id: 
-                postgres_update_query = """ UPDATE submission SET UPDATED_AT = %s where ID = %s"""
+                postgres_update_query = """ UPDATE public.submission SET UPDATED_AT = %s where ID = %s"""
                 record_to_insert = (updated_at, id)
-                cur = conn.cursor()
-                cur.execute(postgres_update_query, record_to_insert)
                 try:
+                    cur = conn.cursor()
+                    cur.execute(postgres_update_query, record_to_insert)
                     conn.commit()
                 except errors.InFailedSqlTransaction as err:
                     print_psycopg2_exception(err)

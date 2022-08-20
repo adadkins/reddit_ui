@@ -22,7 +22,7 @@ func main() {
 func connectDB() *sqlx.DB {
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("PG_HOST"), os.Getenv("PG_PORT"), os.Getenv("PG_USER"), os.Getenv("PG_PASSWORD"), os.Getenv("PG_DB_NAME"))
-
+	fmt.Println(psqlInfo)
 	db, err := sqlx.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)

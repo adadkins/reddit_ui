@@ -14,4 +14,6 @@ The Postgres DB will allow us to build an API to return which comments have been
 
 - There are a lot of "No Data returned for comment" from praw. Investigate cause. Its likely I'm not handling deleted or removed comments correctly.
 
-- Clean up code. Error handling is duplicated. SQL statements and commits are duplicated. Could easily be abstracted and cleaned up.
+- Clean up code. Error handling is duplicated. SQL statements and commits are duplicated. Could be abstracted and cleaned up.
+
+- ~~fatal error if columns are not long enough for author or body~~ permanently fix temporary 5000 character limit patch
