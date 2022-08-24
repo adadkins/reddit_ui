@@ -17,3 +17,10 @@ The Postgres DB will allow us to build an API to return which comments have been
 - Clean up code. Error handling is duplicated. SQL statements and commits are duplicated. Could be abstracted and cleaned up.
 
 - ~~fatal error if columns are not long enough for author or body~~ permanently fix temporary 5000 character limit patch
+
+
+```
+
+docker buildx build --push --platform linux/arm/v7,linux/amd64,linux/arm/v6 --tag ghcr.io/adadkins/reddit_comment_puller:latest .
+
+```

@@ -16,3 +16,4 @@ FROM alpine:latest
 COPY --from=0 "/build/cmd/app" app
  
 ENTRYPOINT ./app
+EXPOSE 8080

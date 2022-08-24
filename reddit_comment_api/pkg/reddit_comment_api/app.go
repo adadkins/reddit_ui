@@ -3,6 +3,7 @@ package reddit_comment_api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -16,21 +17,12 @@ type App struct {
 	db *sqlx.DB
 }
 
-type Comment struct {
-	ID         string
-	parent_ID  string
-	post_ID    string
-	body       string
-	author     string
-	updated_at int
-}
-
 type SubmissionNode struct {
 	ID         string
 	Body       string
 	Author     string
 	Updated_at int
-	Children   []*SubmissionNode
+	Children   []*SubmissionNode `json:"data,omitempty"`
 }
 
 func NewApp(db *sqlx.DB) App {
@@ -113,7 +105,7 @@ func (a *App) GetLatestComments(w http.ResponseWriter, r *http.Request) {
 
 func (a *App) appendChildren(parent *SubmissionNode) error {
 	var results []*SubmissionNode
-	queryStatement := "SELECT id, body, author, created_at, updated_at FROM comments WHERE PARENT_ID = $1 ORDER BY updated_at desc;"
+	queryStatement := "SELECT id, body, author, updated_at FROM comments WHERE PARENT_ID = $1 ORDER BY updated_at desc;"
 	if err := a.db.Select(&results, queryStatement, parent.ID); err != nil {
 		if err != nil {
 			fmt.Println(err)
@@ -137,7 +129,10 @@ func (a *App) Start() error {
 	rtr := mux.NewRouter()
 	rtr.HandleFunc("/submissions/", a.GetLatestSubmissions).Methods("GET")
 	rtr.HandleFunc("/submissions/{^.*[a-zA-Z0-9]+.*$}/comments", a.GetLatestComments).Methods("GET")
-
 	err := http.ListenAndServe(":8080", rtr)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
 	return err
 }

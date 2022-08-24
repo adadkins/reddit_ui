@@ -3,9 +3,9 @@ version: "3.3"
 services:
   traefik:
     image: "traefik:v2.8"
-    container_name: "traefik-reddit_comment_api"
+    container_name: "traefik"
     command:
-      - "--log.level=DEBUG"
+      #- "--log.level=DEBUG"
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
@@ -15,8 +15,6 @@ services:
       - "8080:8080"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    depends_on:
-      - db
   db:
     image: postgres:14.1-alpine
     restart: always
@@ -26,23 +24,38 @@ services:
       - db:/var/lib/postgresql/data
     environment:
       POSTGRES_PASSWORD: 'postgres'
-      
   reddit-comment-api:
-    build: .
-    container_name: "reddit-comment-api"
+    build: ./reddit_comment_api/
+    depends_on: 
+      - db
     environment:
       - PG_USER=postgres
       - PG_PASSWORD=postgres
       - PG_HOST=db
       - PG_PORT=5432
       - PG_DB_NAME=postgres
-    depends_on:
-      - db
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.reddit-comment-api.rule=Host(`redditapi.localhost`)"
-      - "traefik.http.routers.reddit-comment-api.entrypoints=web"
-    
+      - "traefik.http.routers.reddit-comment-api:.rule=Host(`redditapi.localhost`)"
+      - "traefik.http.routers.reddit-comment-api:.entrypoints=web"
+  reddit_comment_puller:
+    build: ./reddit_comment_puller/
+    restart: always
+    environment:
+      - PG_USER=postgres
+      - PG_PASSWORD=postgres
+      - PG_HOST=db
+      - PG_PORT=5432
+      - PG_DB_NAME=postgres
+      - SUBREDDITS=ALL
+      - USERNAME=
+      - PASSWORD=
+      - USER_AGENT=
+      - CLIENT_ID=
+      - CLIENT_SECRET=
+    depends_on:
+      - db
+
 volumes:
   db:
     driver: local

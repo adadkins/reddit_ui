@@ -8,7 +8,7 @@ from psycopg2 import OperationalError, errorcodes, errors
 
 load_dotenv()
 
-subreddits=os.environ["subreddits"]
+subreddits=os.environ["SUBREDDITS"]
 
 conn = psycopg2.connect(
         host=os.environ["PG_HOST"],
@@ -20,11 +20,11 @@ def main() -> None:
     print(conn.poll())
 
     reddit: praw.Reddit = praw.Reddit(
-        client_id=os.environ["client_id"],
-        client_secret=os.environ["client_secret"],
-        user_agent=os.environ["user_agent"],
-        username=os.environ["username"],
-        password=os.environ["password"]
+        client_id=os.environ["CLIENT_ID"],
+        client_secret=os.environ["CLIENT_SECRET"],
+        user_agent=os.environ["USER_AGENT"],
+        username=os.environ["USERNAME"],
+        password=os.environ["PASSWORD"]
     )
     while True:
         print("Listening...")
