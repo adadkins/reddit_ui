@@ -42,6 +42,7 @@ func NewApp(db *sqlx.DB) App {
 // # t6_	Award
 
 func (a *App) GetLatestSubmissions(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
 	var results []SubmissionNode
 	queryStatement := "SELECT id, body, author, updated_at FROM submission ORDER BY updated_at DESC LIMIT 10;"
 	rows, err := a.db.Queryx(queryStatement)
@@ -63,6 +64,7 @@ func (a *App) GetLatestSubmissions(w http.ResponseWriter, r *http.Request) {
 		results = append(results, result)
 	}
 	err = json.NewEncoder(w).Encode(results)
+	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		fmt.Println(err)
 		w.Write([]byte(err.Error()))
@@ -72,6 +74,8 @@ func (a *App) GetLatestSubmissions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) GetLatestComments(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	path := strings.Split(r.URL.Path, "/")
 	post_ID := path[2]
 
@@ -95,6 +99,8 @@ func (a *App) GetLatestComments(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = json.NewEncoder(w).Encode(results)
+	w.Header().Set("Content-Type", "application/json")
+
 	if err != nil {
 		fmt.Println(err)
 		w.Write([]byte(err.Error()))
@@ -135,4 +141,8 @@ func (a *App) Start() error {
 		return err
 	}
 	return err
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }
