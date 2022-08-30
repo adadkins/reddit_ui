@@ -55,9 +55,15 @@ def insert_link(submission: praw.reddit.models.Comment) -> None:
         author_name= "Deleted"
     else: 
         author_name=submission.author.name
-    if len(submission.selftext)>5000:
-        submission.selftext= submission.selftext[:5000]
-    record_to_insert = (submission.name, submission.selftext, author_name, now)
+    text=""
+    if submission.is_self is False:
+        text=submission.url
+    else:
+        if len(submission.selftext)>5000:
+            text= submission.selftext[:5000]
+        else:
+            text=submission.selftext
+    record_to_insert = (submission.name, text, author_name, now)
     try:
         cur = conn.cursor()
         cur.execute(postgres_insert_query, record_to_insert)
